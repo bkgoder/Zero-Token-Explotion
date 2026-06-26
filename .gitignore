@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+dist/
+*.vsix
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Test coverage
+coverage/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Database (local)
+*.db
+*.sqlite
+*.sqlite3
+
+# Global storage (extension data)
+.globalStorage/
+
+# Large binary assets — served via GitHub Releases, not committed to git
+bin/
+tts-server/*.onnx
+tts-server/*.tar.gz
+tts-server/piper
+tts-server/piper.tar.gz
+tts-server/tts-api-server.wasm
+zero-token-tts-server
+zero-token-tts-server-x64
+zero-token-tts-server-arm64

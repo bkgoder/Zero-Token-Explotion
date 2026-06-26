@@ -1,0 +1,25 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="18" y1="14" x2="111" y2="116" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8B5CF6"/>
+      <stop offset="0.52" stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#06B6D4"/>
+    </linearGradient>
+    <linearGradient id="wave" x1="31" y1="42" x2="99" y2="87" gradientUnits="userSpaceOnUse">
+      <stop stop-color="white"/>
+      <stop offset="1" stop-color="#DFF7FF"/>
+    </linearGradient>
+    <filter id="shadow" x="8" y="9" width="112" height="114" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="7" stdDeviation="7" flood-color="#111827" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <rect x="18" y="14" width="92" height="92" rx="27" fill="url(#bg)"/>
+    <path d="M37 61V71" stroke="url(#wave)" stroke-width="8" stroke-linecap="round"/>
+    <path d="M50.5 48.5V83.5" stroke="url(#wave)" stroke-width="8" stroke-linecap="round"/>
+    <path d="M64 38V94" stroke="url(#wave)" stroke-width="8" stroke-linecap="round"/>
+    <path d="M77.5 48.5V83.5" stroke="url(#wave)" stroke-width="8" stroke-linecap="round"/>
+    <path d="M91 58V74" stroke="url(#wave)" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="97" cy="31" r="8" fill="#A7F3D0" stroke="white" stroke-width="3"/>
+  </g>
+</svg>

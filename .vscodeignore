@@ -1,0 +1,14 @@
+.vscode/**
+.gitignore
+.opencode/**
+node_modules/**
+src/**
+tts-server/**
+scripts/**
+server.js
+setup.sh
+zero-token-tts-server
+tsconfig.json
+**/*.ts
+**/*.map
+**/*.log

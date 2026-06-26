@@ -1,0 +1,254 @@
+{
+  "name": "zero-token-tts",
+  "displayName": "Zero-Token TTS",
+  "description": "Lokales Text-to-Speech Voice Studio für VS Code mit verifiziertem Runtime-Bootstrap, Stimmenverwaltung und Verlauf.",
+  "version": "1.5.2",
+  "publisher": "forgefabrik",
+  "private": true,
+  "license": "SEE LICENSE IN LICENSE",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bkgoder/Zero-Toke--TTS-Runtime.git"
+  },
+  "homepage": "https://github.com/bkgoder/Zero-Toke--TTS-Runtime",
+  "bugs": {
+    "url": "https://github.com/bkgoder/Zero-Toke--TTS-Runtime/issues"
+  },
+  "icon": "resources/icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Accessibility",
+    "Other"
+  ],
+  "keywords": [
+    "tts",
+    "piper",
+    "wasmedge",
+    "german",
+    "deutsch",
+    "accessibility",
+    "voice",
+    "speech"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onView:zeroTokenTtsDashboard",
+    "onCommand:zero-token-tts.openDashboard",
+    "onCommand:zero-token-tts.startServer",
+    "onCommand:zero-token-tts.bootstrap"
+  ],
+  "main": "./runtime/entry.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "zero-token-tts.openDashboard",
+        "category": "TTS",
+        "title": "Voice Studio öffnen",
+        "icon": "$(megaphone)"
+      },
+      {
+        "command": "zero-token-tts.bootstrap",
+        "category": "TTS",
+        "title": "Frisches System vollständig einrichten",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "zero-token-tts.readClipboard",
+        "category": "TTS",
+        "title": "Zwischenablage vorlesen"
+      },
+      {
+        "command": "zero-token-tts.readSelection",
+        "category": "TTS",
+        "title": "Auswahl vorlesen"
+      },
+      {
+        "command": "zero-token-tts.showStatus",
+        "category": "TTS",
+        "title": "Server-Status anzeigen"
+      },
+      {
+        "command": "zero-token-tts.openAudioPanel",
+        "category": "TTS",
+        "title": "Audio-Panel öffnen"
+      },
+      {
+        "command": "zero-token-tts.startServer",
+        "category": "TTS",
+        "title": "TTS-Server starten",
+        "icon": "$(play)"
+      },
+      {
+        "command": "zero-token-tts.stopServer",
+        "category": "TTS",
+        "title": "TTS-Server stoppen",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "zero-token-tts.openHistory",
+        "category": "TTS",
+        "title": "Voice Studio im Verlauf öffnen"
+      },
+      {
+        "command": "zero-token-tts.historyReplay",
+        "category": "TTS",
+        "title": "Letzte TTS-Ausgabe erneut abspielen"
+      },
+      {
+        "command": "zero-token-tts.historyClear",
+        "category": "TTS",
+        "title": "TTS-Verlauf löschen"
+      },
+      {
+        "command": "zero-token-tts.toggleAutoPlay",
+        "category": "TTS",
+        "title": "Autoplay ein/aus"
+      },
+      {
+        "command": "zero-token-tts.openSkill",
+        "category": "TTS",
+        "title": "TTS-Skill öffnen"
+      },
+      {
+        "command": "zero-token-tts.showMcpConfig",
+        "category": "TTS",
+        "title": "MCP-Konfiguration kopieren"
+      },
+      {
+        "command": "zero-token-tts.openModelDashboard",
+        "category": "TTS",
+        "title": "Stimmen-Tab öffnen",
+        "icon": "$(server-environment)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "zeroTokenTts",
+          "title": "Zero-Token TTS",
+          "icon": "resources/tts-sidebar.svg"
+        }
+      ]
+    },
+    "views": {
+      "zeroTokenTts": [
+        {
+          "type": "webview",
+          "id": "zeroTokenTtsDashboard",
+          "name": "Voice Studio",
+          "visibility": "visible"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "zero-token-tts.openModelDashboard",
+          "when": "view == zeroTokenTtsDashboard",
+          "group": "navigation@1"
+        },
+        {
+          "command": "zero-token-tts.bootstrap",
+          "when": "view == zeroTokenTtsDashboard",
+          "group": "navigation@2"
+        },
+        {
+          "command": "zero-token-tts.startServer",
+          "when": "view == zeroTokenTtsDashboard",
+          "group": "navigation@3"
+        },
+        {
+          "command": "zero-token-tts.stopServer",
+          "when": "view == zeroTokenTtsDashboard",
+          "group": "navigation@4"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "zero-token-tts.readSelection",
+          "when": "editorHasSelection",
+          "group": "navigation@50"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "zero-token-tts.readClipboard",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r"
+      },
+      {
+        "command": "zero-token-tts.readSelection",
+        "key": "ctrl+shift+t",
+        "mac": "cmd+shift+t"
+      }
+    ],
+    "configuration": {
+      "title": "Zero-Token TTS",
+      "properties": {
+        "zero-token-tts.serverPort": {
+          "type": "number",
+          "default": 18766,
+          "description": "Port für den Extension HTTP-Proxy-Server"
+        },
+        "zero-token-tts.ttsApiPort": {
+          "type": "number",
+          "default": 18765,
+          "description": "Port des lokalen TTS-API-Servers"
+        },
+        "zero-token-tts.serverEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "TTS-Server automatisch starten"
+        },
+        "zero-token-tts.autoBootstrap": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auf frischen Systemen den geführten Runtime-Assistenten starten"
+        },
+        "zero-token-tts.installWasmEdge": {
+          "type": "boolean",
+          "default": false,
+          "description": "WasmEdge zusätzlich lokal im VS-Code-Erweiterungsspeicher installieren"
+        },
+        "zero-token-tts.activeModel": {
+          "type": "string",
+          "default": "de_DE-eva_k-x_low",
+          "description": "Aktives lokales Sprachmodell"
+        },
+        "zero-token-tts.language": {
+          "type": "string",
+          "default": "de",
+          "enum": [
+            "de",
+            "en"
+          ],
+          "description": "Sprache für TTS"
+        },
+        "zero-token-tts.voice": {
+          "type": "string",
+          "default": "eva",
+          "description": "Aktive TTS-Stimme"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "node -e \"require('fs').mkdirSync('dist',{recursive:true});require('fs').cpSync(require('path').join(require('path').dirname(require.resolve('sql.js')),'sql-wasm.wasm'),'dist/sql-wasm.wasm',{force:true})\" && esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --keep-names --main-fields=module,main && esbuild src/bootstrap-entry.ts --bundle --outfile=dist/bootstrap.js --external:vscode --format=cjs --platform=node --keep-names --main-fields=module,main",
+    "watch": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --watch --sourcemap --keep-names --main-fields=module,main",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/sql.js": "^1.4.11",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.1",
+    "esbuild": "^0.28.0",
+    "typescript": "^5.9.0"
+  },
+  "dependencies": {
+    "sql.js": "^1.11.0"
+  }
+}

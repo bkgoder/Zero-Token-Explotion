@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "manifestVersion": "1.5.2",
+  "repository": "bkgoder/Zero-Toke--TTS-Runtime",
+  "backends": {
+    "piper-local": {
+      "status": "stable",
+      "releaseTag": "v1.5.2",
+      "defaultModel": "de_DE-eva_k-x_low",
+      "targets": {
+        "linux-x64": {
+          "asset": "zero-token-tts-runtime-linux-x64.tar.gz",
+          "checksumAsset": "zero-token-tts-runtime-linux-x64.tar.gz.sha256"
+        },
+        "linux-arm64": {
+          "asset": "zero-token-tts-runtime-linux-arm64.tar.gz",
+          "checksumAsset": "zero-token-tts-runtime-linux-arm64.tar.gz.sha256"
+        },
+        "darwin-x64": {
+          "asset": "zero-token-tts-runtime-darwin-x64.tar.gz",
+          "checksumAsset": "zero-token-tts-runtime-darwin-x64.tar.gz.sha256"
+        },
+        "darwin-arm64": {
+          "asset": "zero-token-tts-runtime-darwin-arm64.tar.gz",
+          "checksumAsset": "zero-token-tts-runtime-darwin-arm64.tar.gz.sha256"
+        },
+        "windows-x64": {
+          "asset": "zero-token-tts-runtime-windows-x64.zip",
+          "checksumAsset": "zero-token-tts-runtime-windows-x64.zip.sha256"
+        }
+      }
+    }
+  },
+  "models": {
+    "de_DE-eva_k-x_low": {
+      "voice": "eva",
+      "language": "de-DE"
+    },
+    "de_DE-thorsten_emotional-medium": {
+      "voice": "thorsten",
+      "language": "de-DE"
+    },
+    "en_GB-alan-medium": {
+      "voice": "alan",
+      "language": "en-GB"
+    },
+    "en_US-amy-medium": {
+      "voice": "amy",
+      "language": "en-US"
+    }
+  }
+}
