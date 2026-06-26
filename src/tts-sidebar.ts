@@ -823,7 +823,7 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
       cursor: pointer; transition: background var(--dur);
     }
     .sl::before {
-      content: ; position: absolute;
+      content: ""; position: absolute;
       width: 12px; height: 12px; left: 2px; top: 2px;
       border-radius: 50%; background: var(--muted);
       transition: transform var(--dur), background var(--dur);
@@ -899,10 +899,10 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
         </div>
       </div>
       <div class="mg">
-        <div class="metric"><div class="label">Aktive Stimme</div><strong id="activeVoice">–</strong></div>
-        <div class="metric"><div class="label">Ausgaben</div><strong id="historyCount">0</strong></div>
-        <div class="metric"><div class="label">TTS Port</div><strong id="apiPort">18765</strong></div>
-        <div class="metric"><div class="label">Proxy Port</div><strong id="proxyPort">18766</strong></div>
+        <div class="metric"><div class="lbl">Aktive Stimme</div><strong id="activeVoice">–</strong></div>
+        <div class="metric"><div class="lbl">Ausgaben</div><strong id="historyCount">0</strong></div>
+        <div class="metric"><div class="lbl">TTS Port</div><strong id="apiPort">18765</strong></div>
+        <div class="metric"><div class="lbl">Proxy Port</div><strong id="proxyPort">18766</strong></div>
       </div>
       <div class="card" style="margin-top:8px">
         <div class="row between">
@@ -976,7 +976,7 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
         <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:5px">
           <button class="btn sec xs" id="toggleKeyVisible">👁 Anzeigen</button>
           <button class="btn ghost xs" id="copyMasterKey">📋 Kopieren</button>
-          <button class="btn ghost xs" id="claimMasterKeyBtn" id="claimMasterKeyBtn">🔓 Key claimen</button>
+          <button class="btn ghost xs" id="claimMasterKeyBtn">🔓 Key claimen</button>
         </div>
         <div id="masterKeyHint" class="small muted" style="margin-top:6px"></div>
       </div>
@@ -1003,8 +1003,8 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
           <button id="restartServer" class="btn sec xs">↺ Neu starten</button>
           <button id="stopServer" class="btn danger xs">■ Stoppen</button>
         </div>
-        <button id="bootstrap" class="btn ghost wide" style="margin-top:8px">🔧 Einrichtung ausführen</button>
-        <button id="openOutput" class="btn ghost wide" style="margin-top:5px">🔍 Diagnose-Log öffnen</button>
+        <button id="bootstrap" class="btn ghost w" style="margin-top:8px">🔧 Einrichtung ausführen</button>
+        <button id="openOutput" class="btn ghost w" style="margin-top:5px">🔍 Diagnose-Log öffnen</button>
       </div>
     </section>
   </main>
@@ -1058,7 +1058,7 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
       const isDownloading = dl?.status === 'downloading';
       const isDone = m.downloaded || dl?.status === 'done';
       const isError = dl?.status === 'error';
-      const qualityColor = m.quality === 'high' ? 'green' : m.quality === 'medium' ? 'blue' : '';
+      const qualityColor = m.quality === 'high' ? 'ok' : m.quality === 'medium' ? 'inf' : 'warn';
 
       let actions = '';
       if (isDone) {
@@ -1073,9 +1073,9 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
         actions = \`<button class="btn xs" data-catalog-dl="\${esc(m.id)}">⬇ Laden (\${esc(m.size)})</button>\`;
       }
 
-      return \`<article class="vc \${m.active ? 'active' : ''} \${isDownloading ? 'downloading' : ''}">
+      return \`<article class="vc \${m.active ? 'active' : ''} \${isDownloading ? 'dl' : ''}">
         <div class="row between">
-          <div><div class="vc-name">\${esc(m.label)}</div><div class="very-small muted">\${esc(m.id)}</div></div>
+          <div><div class="vc-name">\${esc(m.label)}</div><div class="xsmall muted">\${esc(m.id)}</div></div>
           <div class="hero-btns">\${actions}</div>
         </div>
         <div class="chips">
@@ -1084,7 +1084,7 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
           <span class="chip">\${esc(m.size)}</span>
         </div>
         \${isDownloading ? '<div class="pbar"><div class="pfill" style="width:100%"></div></div>' : ''}
-        \${isError ? '<div class="very-small" style="color:#ef4444;margin-top:4px">Fehler: ' + esc(dl.error||'unbekannt') + '</div>' : ''}
+        \${isError ? '<div class="xsmall" style="color:#ef4444;margin-top:4px">Fehler: ' + esc(dl.error||'unbekannt') + '</div>' : ''}
       </article>\`;
     }).join('') || '<div class="empty">Keine Modelle für diese Sprache.</div>';
   }
@@ -1106,7 +1106,7 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
         <div class="pav">🎤</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:650;font-size:12px">\${esc(p.name)}</div>
-          <div class="very-small muted">\${esc(fmtDate(p.createdAt))} · \${esc(p.baseModel||'')}</div>
+          <div class="xsmall muted">\${esc(fmtDate(p.createdAt))} · \${esc(p.baseModel||'')}</div>
         </div>
         <button class="btn danger xs" data-del-profile="\${esc(p.id)}">🗑</button>
       </div>\`
