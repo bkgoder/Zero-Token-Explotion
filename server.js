@@ -133,6 +133,11 @@ class PiperEngine {
         reject(new Error(`Piper error: ${err.message}`));
       });
 
+      // EPIPE auf stdin abfangen (Piper beendet sich vor dem Schreiben)
+      piper.stdin.on("error", (err) => {
+        if (err.code !== "EPIPE") reject(err);
+      });
+
       piper.on("close", (code) => {
         if (code !== 0) {
           reject(new Error(`Piper exited with code ${code}: ${Buffer.concat(stderr).toString()}`));
