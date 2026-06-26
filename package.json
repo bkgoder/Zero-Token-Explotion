@@ -20,7 +20,6 @@
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Accessibility",
     "Other"
   ],
   "keywords": [
@@ -34,11 +33,7 @@
     "speech"
   ],
   "activationEvents": [
-    "onStartupFinished",
-    "onView:zeroTokenTtsDashboard",
-    "onCommand:zero-token-tts.openDashboard",
-    "onCommand:zero-token-tts.startServer",
-    "onCommand:zero-token-tts.bootstrap"
+    "onStartupFinished"
   ],
   "main": "./runtime/entry.js",
   "contributes": {
@@ -139,6 +134,7 @@
           "type": "webview",
           "id": "zeroTokenTtsDashboard",
           "name": "Voice Studio",
+          "icon": "resources/tts-sidebar.svg",
           "visibility": "visible"
         }
       ]
