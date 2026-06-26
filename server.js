@@ -78,12 +78,7 @@ class PiperEngine {
   }
 
   getBinDir() {
-    // In pkg, __dirname points to the extracted assets
-    if (process.pkg && process.pkg.entrypoint) {
-      return ASSETS_DIR;
-    }
-    // Development: use relative path
-    return path.join(__dirname, "..", "tts-server");
+    return ASSETS_DIR;
   }
 
   ensureExecutable() {
