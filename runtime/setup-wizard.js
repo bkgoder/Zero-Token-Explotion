@@ -39,8 +39,17 @@ function deployMcp(targetPath, outputChannel) {
     if (fs.existsSync(targetPath)) {
       try { data = JSON.parse(fs.readFileSync(targetPath, "utf8")); } catch {}
     }
+    if (!data.mcpServers) data.mcpServers = {};
+    data.mcpServers["tts-skill"] = {
+      type: "sse",
+      url: "http://localhost:18764/sse",
+    };
+    // Backward-compatibility for older clients that still read `servers`.
     if (!data.servers) data.servers = {};
-    data.servers["zero-token-tts"] = { type: "sse", url: "http://localhost:18764/sse" };
+    data.servers["tts-skill"] = {
+      type: "sse",
+      url: "http://localhost:18764/sse",
+    };
     fs.writeFileSync(targetPath, JSON.stringify(data, null, 2));
     outputChannel.appendLine("[Setup] MCP: " + targetPath);
   } catch (e) {

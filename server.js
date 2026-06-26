@@ -686,8 +686,24 @@ function startMcpServer(port = MCP_PORT) {
       return;
     }
 
-    // MCP JSON-RPC
-    if (req.method === "POST" && req.url === "/mcp") {
+    // MCP legacy SSE endpoint (for clients that fallback to SSE transport)
+    if (req.method === "GET" && req.url === "/sse") {
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      });
+      // Legacy MCP-SSE clients expect an endpoint event with the POST target.
+      res.write(`event: endpoint\ndata: http://localhost:${MCP_PORT}/mcp\n\n`);
+      const keepAlive = setInterval(() => {
+        try { res.write(": ping\\n\\n"); } catch {}
+      }, 15000);
+      req.on("close", () => clearInterval(keepAlive));
+      return;
+    }
+
+    // MCP JSON-RPC (streamable HTTP + compatibility alias on /sse)
+    if (req.method === "POST" && (req.url === "/mcp" || req.url === "/sse" || req.url.startsWith("/messages"))) {
       let body = "";
       req.on("data", (c) => (body += c));
       req.on("end", async () => {
@@ -705,7 +721,7 @@ function startMcpServer(port = MCP_PORT) {
               result: {
                 protocolVersion: "2024-11-05",
                 capabilities: { tools: {} },
-                serverInfo: { name: "zero-token-tts", version: "1.0.0" },
+                serverInfo: { name: "zero-token-tts-mcp", version: "1.0.0" },
               },
             }));
             return;

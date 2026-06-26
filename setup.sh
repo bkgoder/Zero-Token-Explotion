@@ -262,7 +262,7 @@ fi
 deploy_mcp() {
   local TARGET="$1"
   local MCP_JSON
-  MCP_JSON='{"servers":{"zero-token-tts":{"type":"sse","url":"http://localhost:18764/sse"}}}'
+    MCP_JSON='{"mcpServers":{"tts-skill":{"type":"sse","url":"http://localhost:18764/sse"}},"servers":{"tts-skill":{"type":"sse","url":"http://localhost:18764/sse"}}}'
 
   mkdir -p "$(dirname "$TARGET")"
   if [ -f "$TARGET" ]; then
@@ -276,6 +276,7 @@ try:
 except Exception:
     data = {}
 data.setdefault("servers", {}).update(new_entry["servers"])
+data.setdefault("mcpServers", {}).update(new_entry["mcpServers"])
 with open(target, "w") as f:
     json.dump(data, f, indent=2)
 print(f"  ✅ MCP aktualisiert: {target}")
