@@ -17,13 +17,9 @@ if [ ! -f "$ASSETS_DIR/piper" ]; then
 
   TMP_DIR="$(mktemp -d)"
   curl -sSfL "$PIPER_URL" | tar -xz -C "$TMP_DIR"
-  cp "$TMP_DIR/piper/piper" "$ASSETS_DIR/piper"
+  # Alle Dateien aus dem Piper-Archiv kopieren (Binary + alle .so-Bibliotheken)
+  cp -r "$TMP_DIR/piper/." "$ASSETS_DIR/"
   chmod +x "$ASSETS_DIR/piper"
-
-  # espeak-ng-data (needed by piper)
-  if [ ! -d "$ASSETS_DIR/espeak-ng-data" ]; then
-    cp -r "$TMP_DIR/piper/espeak-ng-data" "$ASSETS_DIR/espeak-ng-data"
-  fi
 
   rm -rf "$TMP_DIR"
   echo "[entrypoint] Piper installiert: $ASSETS_DIR/piper"
