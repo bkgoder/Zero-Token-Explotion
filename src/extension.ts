@@ -25,8 +25,6 @@ import { getServerManager } from "./tts-bootstrap";
 let ttsServer: http.Server | null = null;
 let serverPort = 18766;
 let statusBarItem: vscode.StatusBarItem | null = null;
-let audioPanel: vscode.WebviewPanel | null = null;
-let audioPanelDisposed = false;
 let outputChannel: vscode.OutputChannel;
 let treeProvider: TtsTreeProvider;
 let sidebarProvider: TtsSidebarProvider;
@@ -100,7 +98,6 @@ export async function activate(context: vscode.ExtensionContext) {
   });
 
   if (serverEnabled) {
-    audioPanel = createAudioPanel();
     startTtsServer(serverPort);
   }
 
@@ -178,7 +175,7 @@ export async function activate(context: vscode.ExtensionContext) {
     }),
 
     vscode.commands.registerCommand("zero-token-tts.openAudioPanel", () => {
-      ensureAudioPanel();
+      sidebarProvider.focus("speak");
     }),
 
     vscode.commands.registerCommand("zero-token-tts.stopServer", () => {
@@ -270,8 +267,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand(
       "zero-token-tts.speakAudioData",
       (base64: string) => {
-        const panel = ensureAudioPanel();
-        void panel.webview.postMessage({ type: "speakAudio", audioBase64: base64 });
+        sidebarProvider.postMessage({ type: "speakAudio", audioBase64: base64 });
       },
     ),
   );
@@ -282,7 +278,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() {
   stopTtsServer();
-  if (audioPanel) audioPanel.dispose();
   persistDatabase();
   closeDatabase();
   outputChannel?.dispose();
@@ -331,29 +326,6 @@ function prepareBundledServer(context: vscode.ExtensionContext): void {
   }
 }
 
-function createAudioPanel(): vscode.WebviewPanel {
-  const panel = vscode.window.createWebviewPanel(
-    "zeroTokenAudio",
-    "TTS Audio",
-    { viewColumn: vscode.ViewColumn.Nine, preserveFocus: true },
-    { enableScripts: true, retainContextWhenHidden: true },
-  );
-  panel.webview.html = getAudioPanelHtml();
-  panel.onDidDispose(() => {
-    audioPanel = null;
-    audioPanelDisposed = true;
-  });
-  return panel;
-}
-
-function ensureAudioPanel(): vscode.WebviewPanel {
-  if (!audioPanel || audioPanelDisposed) {
-    audioPanelDisposed = false;
-    audioPanel = createAudioPanel();
-  }
-  return audioPanel;
-}
-
 async function speakToPanel(text: string, source = "manual"): Promise<void> {
   try {
     const cleanText = text.trim();
@@ -374,8 +346,7 @@ async function speakToPanel(text: string, source = "manual"): Promise<void> {
     );
     await sidebarProvider.refresh();
 
-    const panel = ensureAudioPanel();
-    await panel.webview.postMessage({
+    await sidebarProvider.postMessage({
       type: "speakAudio",
       audioBase64: audioData.toString("base64"),
     });
@@ -385,74 +356,6 @@ async function speakToPanel(text: string, source = "manual"): Promise<void> {
     outputChannel.appendLine(`[TTS] Fehler: ${error?.stack ?? error}`);
     vscode.window.showErrorMessage(`TTS-Fehler: ${error?.message ?? error}`);
   }
-}
-
-function getAudioPanelHtml(): string {
-  const csp = "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' http://localhost:*;";
-  return `<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="${csp}">
-<style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body {
-    font-family:-apple-system,sans-serif;
-    background:var(--vscode-editor-background);
-    color:var(--vscode-editor-foreground);
-    display:flex; align-items:center; justify-content:center;
-    height:100vh; padding:1rem; text-align:center;
-  }
-  button { padding:1rem 2rem; font-size:1.2rem; cursor:pointer; }
-  .status { font-size:0.9rem; margin-top:1rem; opacity:0.7; }
-  .hidden { display:none; }
-</style>
-</head>
-<body>
-<div>
-  <button id="activate">Audio aktivieren</button>
-  <div class="status" id="status">Bereit</div>
-</div>
-<script>
-(function(){
-  const button=document.getElementById('activate');
-  const status=document.getElementById('status');
-  let active=false;
-  let context=null;
-  function log(message){status.textContent=message;}
-  async function unlock(){
-    if(active)return true;
-    try{
-      if(!context)context=new (window.AudioContext||window.webkitAudioContext)();
-      if(context.state==='suspended')await context.resume();
-      active=true;
-      button.classList.add('hidden');
-      log('Audio aktiviert');
-      return true;
-    }catch(error){log('Fehler: '+error.message);return false;}
-  }
-  button.onclick=unlock;
-  document.addEventListener('keydown',()=>{if(!active)unlock();});
-  setTimeout(unlock,300);
-  window.addEventListener('message',async(event)=>{
-    const message=event.data;
-    if(message.type!=='speakAudio'||!message.audioBase64)return;
-    if(!active&&!(await unlock())){log('Bitte Audio aktivieren');return;}
-    try{
-      const data=Uint8Array.from(atob(message.audioBase64),character=>character.charCodeAt(0));
-      const audioBuffer=await context.decodeAudioData(data.buffer);
-      const source=context.createBufferSource();
-      source.buffer=audioBuffer;
-      source.connect(context.destination);
-      source.start(0);
-      log('Wiedergabe…');
-      source.onended=()=>log('Fertig');
-    }catch(error){log('Fehler: '+error.message);}
-  });
-})();
-</script>
-</body>
-</html>`;
 }
 
 function startTtsServer(port: number) {

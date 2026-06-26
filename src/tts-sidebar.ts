@@ -301,6 +301,10 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
     }
   }
 
+  public postMessage(message: unknown): void {
+    void this.view?.webview.postMessage(message);
+  }
+
   private post(message: unknown): void {
     void this.view?.webview.postMessage(message);
   }
@@ -313,6 +317,7 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
       `style-src ${webview.cspSource} 'unsafe-inline'`,
       `script-src 'nonce-${nonce}'`,
       "font-src data:",
+      "media-src blob:",
     ].join("; ");
 
     return `<!doctype html>
@@ -663,6 +668,19 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
       $('busyLabel').textContent = message.label || 'Bitte warten…';
     }
     if (message.type === 'dashboardError') $('statusText').textContent = message.message || 'Dashboard-Fehler';
+    if (message.type === 'speakAudio' && message.audioBase64) {
+      try {
+        const binary = atob(message.audioBase64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const blob = new Blob([bytes], { type: 'audio/wav' });
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.onended = () => URL.revokeObjectURL(url);
+        audio.onerror = () => URL.revokeObjectURL(url);
+        audio.play().catch(() => {});
+      } catch (e) {}
+    }
   });
 
   selectTab(state.tab || 'speak');

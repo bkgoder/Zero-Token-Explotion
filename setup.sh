@@ -1,12 +1,14 @@
 #!/bin/bash
 # Zero-Token TTS — Fresh System Setup Script
-# Dieses Script installiert alle Abhängigkeiten und baut die Extension
+# Dieses Script installiert alle Abhängigkeiten, baut die Extension,
+# startet den Docker-Container und deployt den TTS-Skill zu den Agenten.
 
 set -e
 
 NODE_REQUIRED_MAJOR=18
 NODE_INSTALL_MAJOR=22
 NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 load_nvm() {
     if [ -s "$NVM_DIR/nvm.sh" ]; then
