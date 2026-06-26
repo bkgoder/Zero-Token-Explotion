@@ -71,6 +71,7 @@ export async function activate(context: vscode.ExtensionContext) {
     outputChannel,
     treeProvider,
     speakToPanel,
+    context,
   );
   context.subscriptions.push(
     sidebarProvider,

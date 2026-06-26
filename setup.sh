@@ -216,51 +216,46 @@ if ! command -v code &> /dev/null; then
     echo "   und aktivieren Sie die CLI mit 'Shell Command: Install code in PATH'"
 fi
 
-# 5. Dependencies installieren
+# 6. Dependencies installieren
 echo ""
 echo "📦 Installiere Dependencies..."
 npm install
 
-# 6. Extension bauen
+# 7. Extension bauen
 echo ""
 echo "🔨 Baue Extension..."
 npm run build
 
-# 7. VSIX paketieren
+# 8. VSIX paketieren
 echo ""
 echo "📦 Paketiere Extension..."
 npm run package
 
-# 8. Docker-Container starten
+# 9. Docker-Container starten
 echo ""
 echo "🐳 Starte Docker-Container..."
-if command -v docker &> /dev/null; then
-  cd "$SCRIPT_DIR"
-  if docker compose ps 2>/dev/null | grep -q "zero-token-tts"; then
-    echo "✅ Docker-Container läuft bereits"
-  else
-    echo "⬆️  Starte zero-token-tts Container..."
-    docker compose up -d --build
-    echo -n "⏳ Warte auf Health-Check"
-    for i in $(seq 1 30); do
-      sleep 2
-      STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:18765/health 2>/dev/null || echo "0")
-      if [ "$STATUS" = "200" ]; then
-        echo ""
-        echo "✅ Docker-Container ist bereit (Port 18765)"
-        break
-      fi
-      echo -n "."
-      if [ "$i" = "30" ]; then
-        echo ""
-        echo "⚠️  Container startet noch — bitte warten und erneut prüfen:"
-        echo "   docker logs zero-token-tts"
-      fi
-    done
-  fi
+cd "$SCRIPT_DIR"
+if docker compose ps 2>/dev/null | grep -q "zero-token-tts"; then
+  echo "✅ Docker-Container läuft bereits"
 else
-  echo "⚠️  Docker nicht gefunden. Container nicht gestartet."
-  echo "   Installiere Docker: https://docs.docker.com/get-docker/"
+  echo "⬆️  Starte zero-token-tts Container..."
+  docker compose up -d --build
+  echo -n "⏳ Warte auf Health-Check"
+  for i in $(seq 1 30); do
+    sleep 2
+    STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:18765/health 2>/dev/null || echo "0")
+    if [ "$STATUS" = "200" ]; then
+      echo ""
+      echo "✅ Docker-Container ist bereit (Port 18765)"
+      break
+    fi
+    echo -n "."
+    if [ "$i" = "30" ]; then
+      echo ""
+      echo "⚠️  Container startet noch — bitte warten und erneut prüfen:"
+      echo "   docker logs zero-token-tts"
+    fi
+  done
 fi
 
 # 9. MCP-Server in VS Code eintragen
