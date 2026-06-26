@@ -526,209 +526,326 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
   <meta http-equiv="Content-Security-Policy" content="${csp}">
   <title>Zero-Token TTS</title>
   <style>
-    :root { color-scheme: light dark; }
-    *, *::before, *::after { box-sizing: border-box; }
+    /* ══ Design Tokens ═══════════════════════════════════════════════════════ */
+    :root {
+      color-scheme: light dark;
+      --r1: 5px; --r2: 8px; --r3: 13px;
+      --accent: var(--vscode-focusBorder);
+      --surface: color-mix(in srgb, var(--vscode-editor-background) 84%, transparent);
+      --surface2: color-mix(in srgb, var(--vscode-sideBar-background) 85%, var(--vscode-editor-background));
+      --bd: var(--vscode-widget-border);
+      --muted: var(--vscode-descriptionForeground);
+      --dur: 110ms;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      margin: 0; min-width: 210px;
+      min-width: 190px; overflow-x: hidden;
       color: var(--vscode-foreground);
       background: var(--vscode-sideBar-background);
       font: 12px/1.5 var(--vscode-font-family);
+      -webkit-font-smoothing: antialiased;
     }
     button, textarea, input, select { font: inherit; }
-    button:focus-visible, textarea:focus-visible, input:focus-visible {
-      outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px;
-    }
-    /* ── Hero ── */
+    :focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
+    img { display: block; }
+
+    /* ══ Hero ════════════════════════════════════════════════════════════════ */
     .hero {
-      padding: 14px 14px 10px;
-      border-bottom: 1px solid var(--vscode-sideBar-border, var(--vscode-widget-border));
-      background: linear-gradient(135deg,
-        color-mix(in srgb, var(--vscode-sideBar-background) 88%, #6e40c9 12%),
-        color-mix(in srgb, var(--vscode-sideBar-background) 96%, #3b82f6 4%));
+      padding: clamp(10px,3vw,15px) clamp(10px,3vw,14px) 10px;
+      border-bottom: 1px solid var(--bd);
+      background:
+        radial-gradient(ellipse 70% 60% at 110% -10%, color-mix(in srgb,#7c3aed 22%, transparent), transparent),
+        linear-gradient(160deg,
+          color-mix(in srgb, var(--vscode-sideBar-background) 88%, #2563eb 12%),
+          var(--vscode-sideBar-background) 65%);
     }
-    .brand { display: flex; gap: 10px; align-items: center; }
+    .brand { display: flex; gap: clamp(8px,2.5vw,12px); align-items: center; }
     .logo-wrap {
-      width: 40px; height: 40px; flex: 0 0 40px;
-      display: grid; place-items: center; border-radius: 12px;
-      background: color-mix(in srgb, var(--vscode-editor-background) 75%, transparent);
-      border: 1px solid color-mix(in srgb, var(--vscode-textLink-foreground) 40%, transparent);
+      width: clamp(34px,10vw,42px); height: clamp(34px,10vw,42px); flex: 0 0 clamp(34px,10vw,42px);
+      display: grid; place-items: center; border-radius: var(--r3);
+      background: color-mix(in srgb, var(--vscode-editor-background) 70%, transparent);
+      border: 1px solid color-mix(in srgb, #7c3aed 30%, transparent);
+      box-shadow: 0 4px 18px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.06);
     }
-    .logo { width: 30px; height: 30px; }
-    h1 { margin: 0; font-size: 14px; font-weight: 700; line-height: 1.2; }
-    .subtitle { margin-top: 2px; font-size: 10px; color: var(--vscode-descriptionForeground); }
-    .hero-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+    .logo { width: clamp(22px,6vw,30px); height: clamp(22px,6vw,30px); }
+    .brand-text h1 { font-size: clamp(12px,4vw,15px); font-weight: 700; line-height: 1.2; }
+    .brand-text .sub { margin-top: 2px; font-size: clamp(9px,2.5vw,11px); color: var(--muted); }
+    .hero-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 9px; gap: 6px; }
     .status-pill {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 3px 8px; border-radius: 999px;
+      display: inline-flex; align-items: center; gap: 5px; min-width: 0;
+      padding: 3px clamp(7px,2vw,10px); border-radius: 999px;
       background: color-mix(in srgb, var(--vscode-badge-background) 50%, transparent);
       color: var(--vscode-badge-foreground); font-size: 10px; font-weight: 600;
+      overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
     }
-    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--vscode-descriptionForeground); flex: 0 0 6px; }
-    .dot.running { background: #22c55e; box-shadow: 0 0 0 2px rgba(34,197,94,.2); }
-    .dot.starting { background: #eab308; animation: blink 1s infinite; }
-    .dot.error { background: #ef4444; }
-    @keyframes blink { 50% { opacity: .3; } }
-    /* ── Tabs ── */
+    .dot { width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: var(--muted); }
+    .dot.running { background: #22c55e; box-shadow: 0 0 0 2.5px rgba(34,197,94,.2); }
+    .dot.starting { background: #f59e0b; animation: blink .9s infinite; }
+    .dot.error   { background: #ef4444; }
+    @keyframes blink { 50% { opacity: .2; } }
+    .hero-btns { display: flex; gap: 4px; flex-shrink: 0; }
+
+    /* ══ Tabs ════════════════════════════════════════════════════════════════ */
     .tabs {
       position: sticky; top: 0; z-index: 10;
-      display: grid; grid-template-columns: repeat(5, 1fr);
-      gap: 2px; padding: 6px 5px 5px;
-      background: color-mix(in srgb, var(--vscode-sideBar-background) 92%, transparent);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--vscode-sideBar-border, var(--vscode-widget-border));
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px;
+      padding: 5px 5px 4px;
+      background: color-mix(in srgb, var(--vscode-sideBar-background) 93%, transparent);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--bd);
     }
     .tab {
-      min-width: 0; padding: 6px 2px; border: 0; border-radius: 6px;
-      color: var(--vscode-descriptionForeground);
-      background: transparent; cursor: pointer; font-size: 9.5px; line-height: 1.3;
-      transition: background .1s, color .1s;
+      min-width: 0; padding: 5px 1px; border: 0; border-radius: var(--r1);
+      color: var(--muted); background: transparent; cursor: pointer;
+      font-size: clamp(8px,2.3vw,10px); line-height: 1.3;
+      transition: background var(--dur), color var(--dur);
+      overflow: hidden;
     }
-    .tab:hover { background: var(--vscode-toolbar-hoverBackground); color: var(--vscode-foreground); }
+    .tab:hover  { background: var(--vscode-toolbar-hoverBackground); color: var(--vscode-foreground); }
     .tab.active { background: var(--vscode-list-activeSelectionBackground); color: var(--vscode-list-activeSelectionForeground); font-weight: 600; }
-    .tab-icon { display: block; font-size: 13px; margin-bottom: 2px; }
-    /* ── Layout ── */
-    main { padding: 8px; }
+    .tab-icon   { display: block; font-size: clamp(11px,3.5vw,14px); margin-bottom: 2px; }
+
+    /* ══ Layout ══════════════════════════════════════════════════════════════ */
+    main { padding: clamp(6px,2vw,10px); }
     .panel { display: none; }
-    .panel.active { display: block; animation: fadeIn .12s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(2px); } }
+    .panel.active { display: block; animation: enter .1s ease-out; }
+    @keyframes enter { from { opacity: 0; transform: translateY(3px); } }
+
+    /* ══ Card ════════════════════════════════════════════════════════════════ */
     .card {
-      margin-bottom: 8px; padding: 10px 11px;
-      border: 1px solid var(--vscode-widget-border); border-radius: 8px;
-      background: color-mix(in srgb, var(--vscode-editor-background) 82%, transparent);
+      margin-bottom: 8px; padding: clamp(9px,2.5vw,12px);
+      border: 1px solid var(--bd); border-radius: var(--r2);
+      background: var(--surface);
     }
-    .card-title { margin: 0 0 8px; font-size: 11.5px; font-weight: 700; }
-    .card-subtitle { margin: -4px 0 8px; font-size: 10px; color: var(--vscode-descriptionForeground); }
-    .muted { color: var(--vscode-descriptionForeground); }
-    .small { font-size: 10px; }
-    .very-small { font-size: 9px; }
+    .card-title { font-size: clamp(11px,3vw,12.5px); font-weight: 700; margin-bottom: 7px; }
+    .card-sub   { font-size: 10px; color: var(--muted); margin: -4px 0 8px; }
+    .card-hd    { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
+    .card-hd .card-title { margin-bottom: 2px; }
+
+    /* ══ Type ════════════════════════════════════════════════════════════════ */
+    .muted  { color: var(--muted); }
+    .small  { font-size: 10px; }
+    .xsmall { font-size: 9px; }
+    .trunc  { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+    /* ══ Forms ═══════════════════════════════════════════════════════════════ */
     textarea {
-      width: 100%; min-height: 100px; resize: vertical;
-      padding: 8px; border-radius: 6px;
-      border: 1px solid var(--vscode-input-border, var(--vscode-widget-border));
+      width: 100%; min-height: 92px; resize: vertical;
+      padding: clamp(7px,2vw,9px); border-radius: var(--r1);
+      border: 1px solid var(--vscode-input-border, var(--bd));
       color: var(--vscode-input-foreground);
       background: var(--vscode-input-background);
+      transition: border-color var(--dur);
     }
-    textarea::placeholder { color: var(--vscode-input-placeholderForeground); }
+    textarea:focus { border-color: var(--accent); }
+    textarea::placeholder { color: var(--muted); }
     input[type=text], input[type=password] {
-      width: 100%; padding: 6px 8px; border-radius: 5px;
-      border: 1px solid var(--vscode-input-border, var(--vscode-widget-border));
+      width: 100%; padding: 6px 8px; border-radius: var(--r1);
+      border: 1px solid var(--vscode-input-border, var(--bd));
       color: var(--vscode-input-foreground);
       background: var(--vscode-input-background);
+      transition: border-color var(--dur);
     }
-    input[type=range] { width: 100%; accent-color: var(--vscode-focusBorder); }
-    .counter { margin: 4px 0 0; text-align: right; font-size: 10px; color: var(--vscode-descriptionForeground); }
-    .row { display: flex; align-items: center; gap: 6px; }
+    input[type=text]:focus, input[type=password]:focus { border-color: var(--accent); }
+    input[type=range] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+    .counter { text-align: right; font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+    /* ══ Flex/Grid helpers ════════════════════════════════════════════════════ */
+    .row     { display: flex; align-items: center; gap: 6px; }
     .row.wrap { flex-wrap: wrap; }
     .row.between { justify-content: space-between; }
-    .stack { display: grid; gap: 6px; }
-    .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-    /* ── Buttons ── */
+    .stack   { display: grid; gap: 6px; }
+    .g2      { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 6px; }
+    .mg { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 6px; margin-top: 8px; }
+
+    /* ══ Buttons ═════════════════════════════════════════════════════════════ */
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 4px;
-      min-height: 28px; padding: 4px 10px; border: 1px solid transparent; border-radius: 5px;
+      min-height: clamp(26px,7vw,30px); padding: 4px clamp(8px,2.5vw,12px);
+      border: 1px solid transparent; border-radius: var(--r1);
       color: var(--vscode-button-foreground); background: var(--vscode-button-background);
-      cursor: pointer; font-weight: 600; font-size: 11.5px; white-space: nowrap;
-      transition: background .12s;
+      cursor: pointer; font-weight: 600; font-size: clamp(10.5px,2.8vw,12px);
+      white-space: nowrap; transition: background var(--dur), opacity var(--dur);
+      -webkit-tap-highlight-color: transparent;
     }
-    .btn:hover:not(:disabled) { background: var(--vscode-button-hoverBackground); }
-    .btn.secondary { color: var(--vscode-button-secondaryForeground); background: var(--vscode-button-secondaryBackground); }
-    .btn.secondary:hover:not(:disabled) { background: var(--vscode-button-secondaryHoverBackground); }
-    .btn.ghost { color: var(--vscode-foreground); background: transparent; border-color: var(--vscode-widget-border); }
+    .btn:hover:not(:disabled)  { background: var(--vscode-button-hoverBackground); }
+    .btn:active:not(:disabled) { opacity: .8; }
+    .btn.sec { color: var(--vscode-button-secondaryForeground); background: var(--vscode-button-secondaryBackground); }
+    .btn.sec:hover:not(:disabled) { background: var(--vscode-button-secondaryHoverBackground); }
+    .btn.ghost { color: var(--vscode-foreground); background: transparent; border-color: var(--bd); }
     .btn.ghost:hover:not(:disabled) { background: var(--vscode-toolbar-hoverBackground); }
-    .btn.danger { color: var(--vscode-errorForeground); background: transparent; border-color: color-mix(in srgb, var(--vscode-errorForeground) 40%, transparent); }
-    .btn.danger:hover:not(:disabled) { background: color-mix(in srgb, var(--vscode-errorForeground) 10%, transparent); }
-    .btn.wide { width: 100%; }
-    .btn.xs { min-height: 22px; padding: 2px 7px; font-size: 10px; }
-    .btn:disabled { opacity: .4; cursor: default; }
-    .btn-icon { min-height: 26px; min-width: 26px; padding: 3px; }
-    /* ── Metrics ── */
-    .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
-    .metric { padding: 8px 9px; border-radius: 7px; background: var(--vscode-textBlockQuote-background); }
-    .metric .label { font-size: 9.5px; color: var(--vscode-descriptionForeground); margin-bottom: 2px; }
-    .metric strong { display: block; font-size: 14px; font-weight: 700; }
-    /* ── Speed Slider ── */
-    .speed-row { display: flex; align-items: center; gap: 8px; }
-    .speed-val { min-width: 30px; text-align: right; font-size: 10px; font-weight: 600; color: var(--vscode-textLink-foreground); }
-    /* ── Voice Cards ── */
-    .voice-card {
-      padding: 9px 10px; border: 1px solid var(--vscode-widget-border);
-      border-radius: 7px; background: color-mix(in srgb, var(--vscode-sideBar-background) 85%, var(--vscode-editor-background));
-      transition: border-color .15s;
+    .btn.danger {
+      color: var(--vscode-errorForeground); background: transparent;
+      border-color: color-mix(in srgb, var(--vscode-errorForeground) 40%, transparent);
     }
-    .voice-card.active { border-color: var(--vscode-focusBorder); box-shadow: inset 3px 0 0 var(--vscode-focusBorder); }
-    .voice-card.downloading { border-color: #eab308; }
-    .voice-name { font-weight: 650; font-size: 12px; }
+    .btn.danger:hover:not(:disabled) { background: color-mix(in srgb, var(--vscode-errorForeground) 10%, transparent); }
+    .btn.w { width: 100%; }
+    .btn.xs { min-height: 22px; padding: 2px 7px; font-size: 10px; }
+    .btn.sm { min-height: 25px; padding: 3px 9px; font-size: 10.5px; }
+    .btn.speak { min-height: 36px; font-size: 13px; letter-spacing: .2px; }
+    .btn:disabled { opacity: .36; cursor: not-allowed; }
+
+    /* ══ Metric tiles ════════════════════════════════════════════════════════ */
+    .metric {
+      padding: clamp(7px,2vw,10px); border-radius: var(--r1);
+      background: var(--vscode-textBlockQuote-background);
+      border: 1px solid var(--bd);
+    }
+    .metric .lbl { font-size: 9.5px; color: var(--muted); }
+    .metric strong { display: block; font-size: clamp(12px,3.5vw,15px); font-weight: 700; margin-top: 2px; }
+
+    /* ══ Speed slider ════════════════════════════════════════════════════════ */
+    .speed-row { display: flex; align-items: center; gap: 7px; }
+    .speed-lbl { font-size: 10px; color: var(--muted); white-space: nowrap; }
+    .speed-val { min-width: 33px; text-align: right; font-size: 10px; font-weight: 700; color: var(--accent); }
+
+    /* ══ Voice cards ═════════════════════════════════════════════════════════ */
+    .vc {
+      padding: clamp(8px,2.5vw,11px);
+      border: 1px solid var(--bd); border-radius: var(--r2);
+      background: var(--surface2);
+      transition: border-color var(--dur), box-shadow var(--dur);
+    }
+    .vc:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--bd)); }
+    .vc.active {
+      border-color: var(--accent);
+      box-shadow: inset 3px 0 0 var(--accent), 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+    .vc.dl { border-color: #f59e0b; }
+    .vc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+    .vc-name { font-weight: 650; font-size: clamp(11px,3vw,12.5px); }
+    .vc-id   { font-size: 9px; color: var(--muted); margin-top: 1px; word-break: break-all; }
+
+    /* ══ Chips ═══════════════════════════════════════════════════════════════ */
     .chips { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px; }
     .chip {
-      padding: 1px 5px; border-radius: 999px;
+      padding: 1px 5px; border-radius: 999px; white-space: nowrap;
       background: var(--vscode-badge-background); color: var(--vscode-badge-foreground);
-      font-size: 9px; font-weight: 600; letter-spacing: .3px;
+      font-size: 9px; font-weight: 600;
     }
-    .chip.green { background: color-mix(in srgb, #22c55e 20%, transparent); color: #22c55e; }
-    .chip.blue { background: color-mix(in srgb, #3b82f6 20%, transparent); color: #3b82f6; }
-    .chip.yellow { background: color-mix(in srgb, #eab308 20%, transparent); color: #eab308; }
-    .chip.red { background: color-mix(in srgb, #ef4444 20%, transparent); color: #ef4444; }
-    .progress-bar { height: 3px; background: var(--vscode-widget-border); border-radius: 2px; margin-top: 5px; overflow: hidden; }
-    .progress-fill { height: 100%; background: var(--vscode-focusBorder); border-radius: 2px; transition: width .3s; animation: shimmer 1.5s infinite linear; background-size: 200% 100%; background-image: linear-gradient(90deg, var(--vscode-focusBorder) 0%, color-mix(in srgb, var(--vscode-focusBorder) 60%, white) 50%, var(--vscode-focusBorder) 100%); }
-    @keyframes shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
-    /* ── Lang Filter ── */
-    .lang-filter { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
-    .lang-btn { padding: 2px 8px; border-radius: 999px; border: 1px solid var(--vscode-widget-border); background: transparent; color: var(--vscode-foreground); font-size: 10px; cursor: pointer; }
-    .lang-btn.active { background: var(--vscode-list-activeSelectionBackground); color: var(--vscode-list-activeSelectionForeground); border-color: transparent; }
-    /* ── History ── */
-    .history-item {
-      padding: 8px 9px; border: 1px solid var(--vscode-widget-border);
-      border-radius: 7px; background: color-mix(in srgb, var(--vscode-sideBar-background) 85%, var(--vscode-editor-background));
+    .chip.ok   { background: color-mix(in srgb,#22c55e 18%,transparent); color: #22c55e; }
+    .chip.inf  { background: color-mix(in srgb,#3b82f6 18%,transparent); color: #3b82f6; }
+    .chip.warn { background: color-mix(in srgb,#f59e0b 18%,transparent); color: #f59e0b; }
+    .chip.err  { background: color-mix(in srgb,#ef4444 18%,transparent); color: #ef4444; }
+
+    /* ══ Progress ════════════════════════════════════════════════════════════ */
+    .pbar { height: 3px; background: var(--bd); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+    .pfill {
+      height: 100%; border-radius: 2px;
+      background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 55%, white));
+      background-size: 200% 100%;
+      animation: shimmer 1.3s linear infinite;
     }
-    .history-text { margin: 5px 0 6px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.4; }
-    .history-meta { font-size: 9px; color: var(--vscode-descriptionForeground); }
-    .empty { padding: 20px 10px; text-align: center; color: var(--vscode-descriptionForeground); font-size: 11px; line-height: 1.6; }
-    /* ── Clone Tab ── */
-    .clone-zone {
-      border: 2px dashed var(--vscode-widget-border); border-radius: 8px;
-      padding: 18px; text-align: center; cursor: pointer;
-      transition: border-color .15s, background .15s;
+    @keyframes shimmer { from { background-position:-200% 0; } to { background-position:200% 0; } }
+
+    /* ══ Lang filter ═════════════════════════════════════════════════════════ */
+    .lf { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+    .lbtn {
+      padding: 2px 9px; border-radius: 999px;
+      border: 1px solid var(--bd); background: transparent;
+      color: var(--vscode-foreground); font-size: 10px; cursor: pointer;
+      transition: background var(--dur);
     }
-    .clone-zone:hover, .clone-zone.dragover { border-color: var(--vscode-focusBorder); background: color-mix(in srgb, var(--vscode-focusBorder) 6%, transparent); }
-    .clone-zone-icon { font-size: 28px; line-height: 1; margin-bottom: 8px; }
-    .clone-zone p { margin: 0; font-size: 11px; color: var(--vscode-descriptionForeground); }
-    .profile-card {
-      display: flex; align-items: center; gap: 8px;
-      padding: 8px 9px; border: 1px solid var(--vscode-widget-border);
-      border-radius: 7px; background: color-mix(in srgb, var(--vscode-sideBar-background) 85%, var(--vscode-editor-background));
+    .lbtn:hover  { background: var(--vscode-toolbar-hoverBackground); }
+    .lbtn.active { background: var(--vscode-list-activeSelectionBackground); color: var(--vscode-list-activeSelectionForeground); border-color: transparent; font-weight: 600; }
+
+    /* ══ History ═════════════════════════════════════════════════════════════ */
+    .hi {
+      padding: clamp(7px,2vw,9px);
+      border: 1px solid var(--bd); border-radius: var(--r2);
+      background: var(--surface2);
     }
-    .profile-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #6e40c9, #3b82f6); display: grid; place-items: center; font-size: 14px; flex: 0 0 32px; }
-    /* ── Admin ── */
-    .key-row {
+    .hi-text { margin: 5px 0 6px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.45; font-size: 11.5px; }
+    .hi-meta { font-size: 9.5px; color: var(--muted); }
+    .empty {
+      padding: clamp(16px,6vw,28px) 12px; text-align: center;
+      color: var(--muted); font-size: clamp(10px,2.5vw,12px); line-height: 1.7;
+    }
+    .empty-ico { font-size: clamp(24px,8vw,32px); margin-bottom: 8px; opacity: .45; }
+
+    /* ══ Clone zone ══════════════════════════════════════════════════════════ */
+    .zone {
+      border: 2px dashed var(--bd); border-radius: var(--r2);
+      padding: clamp(14px,5vw,22px); text-align: center; cursor: pointer;
+      transition: border-color var(--dur), background var(--dur);
+    }
+    .zone:hover, .zone.over {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 5%, transparent);
+    }
+    .zone-ico { font-size: clamp(24px,7vw,32px); margin-bottom: 8px; }
+    .zone p   { font-size: clamp(10px,2.5vw,11.5px); color: var(--muted); margin-top: 4px; }
+    .pc {
+      display: flex; align-items: center; gap: clamp(6px,2vw,10px);
+      padding: clamp(7px,2vw,10px); border: 1px solid var(--bd);
+      border-radius: var(--r2); background: var(--surface2);
+    }
+    .pav {
+      width: clamp(28px,8vw,34px); height: clamp(28px,8vw,34px); flex: 0 0 clamp(28px,8vw,34px);
+      border-radius: 50%; background: linear-gradient(135deg,#7c3aed,#2563eb);
+      display: grid; place-items: center; font-size: 14px;
+    }
+
+    /* ══ Admin ═══════════════════════════════════════════════════════════════ */
+    .kr {
       display: grid; grid-template-columns: 1fr auto auto; gap: 5px; align-items: center;
-      padding: 6px 8px; border-radius: 6px;
+      padding: 7px 9px; border-radius: var(--r1);
       background: color-mix(in srgb, var(--vscode-textBlockQuote-background) 80%, transparent);
-      border: 1px solid var(--vscode-widget-border);
+      border: 1px solid var(--bd);
     }
-    .key-name { font-size: 11px; font-weight: 600; }
-    .key-preview { font-family: monospace; font-size: 10px; color: var(--vscode-descriptionForeground); }
-    .master-key-box {
-      font-family: monospace; font-size: 10px; word-break: break-all;
-      padding: 8px; border-radius: 5px; background: var(--vscode-input-background);
-      border: 1px solid var(--vscode-input-border, var(--vscode-widget-border));
+    .kn  { font-size: 11px; font-weight: 600; }
+    .kpv { font-family: monospace; font-size: 9.5px; color: var(--muted); word-break: break-all; }
+    .mkbox {
+      font-family: var(--vscode-editor-font-family, monospace);
+      font-size: clamp(9px,2.5vw,11px); word-break: break-all; line-height: 1.6;
+      padding: clamp(7px,2vw,10px); border-radius: var(--r1);
+      background: var(--vscode-input-background);
+      border: 1px solid var(--vscode-input-border, var(--bd));
       color: var(--vscode-input-foreground); user-select: text;
     }
-    .master-key-box.hidden { filter: blur(5px); cursor: pointer; user-select: none; }
-    /* ── Toggle ── */
-    .switch { position: relative; width: 32px; height: 17px; flex: 0 0 32px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; inset: 0; border-radius: 999px; background: var(--vscode-input-background); border: 1px solid var(--vscode-widget-border); cursor: pointer; transition: background .15s; }
-    .slider:before { content: ""; position: absolute; width: 11px; height: 11px; left: 2px; top: 2px; border-radius: 50%; background: var(--vscode-descriptionForeground); transition: transform .15s; }
-    input:checked + .slider { background: var(--vscode-button-background); border-color: var(--vscode-button-background); }
-    input:checked + .slider:before { transform: translateX(15px); background: var(--vscode-button-foreground); }
-    /* ── Busy overlay ── */
-    .busy { display: none; position: fixed; inset: 0; z-index: 20; place-items: center; background: color-mix(in srgb, var(--vscode-sideBar-background) 75%, transparent); backdrop-filter: blur(4px); }
+    .mkbox.hidden { filter: blur(6px); cursor: pointer; user-select: none; }
+    .kactions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+
+    /* ══ Notice ══════════════════════════════════════════════════════════════ */
+    .notice {
+      padding: clamp(8px,2.5vw,11px); border-radius: var(--r2);
+      border: 1px solid; font-size: clamp(9.5px,2.5vw,11px); line-height: 1.55;
+    }
+    .notice.warn { border-color: color-mix(in srgb,#f59e0b 40%, transparent); background: color-mix(in srgb,#f59e0b 6%, transparent); color: var(--vscode-foreground); }
+    .notice strong { display: block; margin-bottom: 3px; }
+
+    /* ══ Toggle switch ═══════════════════════════════════════════════════════ */
+    .sw { position: relative; width: 34px; height: 18px; flex: 0 0 34px; }
+    .sw input { opacity: 0; width: 0; height: 0; }
+    .sl {
+      position: absolute; inset: 0; border-radius: 999px;
+      background: var(--vscode-input-background); border: 1px solid var(--bd);
+      cursor: pointer; transition: background var(--dur);
+    }
+    .sl::before {
+      content: ; position: absolute;
+      width: 12px; height: 12px; left: 2px; top: 2px;
+      border-radius: 50%; background: var(--muted);
+      transition: transform var(--dur), background var(--dur);
+    }
+    input:checked + .sl { background: var(--vscode-button-background); border-color: var(--vscode-button-background); }
+    input:checked + .sl::before { transform: translateX(16px); background: var(--vscode-button-foreground); }
+
+    /* ══ Busy overlay ════════════════════════════════════════════════════════ */
+    .busy { display: none; position: fixed; inset: 0; z-index: 20; place-items: center; background: color-mix(in srgb, var(--vscode-sideBar-background) 70%, transparent); backdrop-filter: blur(6px); }
     .busy.show { display: grid; }
-    .busy-card { padding: 14px 18px; border-radius: 9px; border: 1px solid var(--vscode-widget-border); background: var(--vscode-editor-background); box-shadow: 0 12px 35px rgba(0,0,0,.3); }
-    .spinner { display: inline-block; width: 12px; height: 12px; margin-right: 6px; border: 2px solid var(--vscode-widget-border); border-top-color: var(--vscode-focusBorder); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: -2px; }
+    .busy-card { padding: clamp(12px,4vw,16px) clamp(14px,5vw,20px); border-radius: var(--r2); border: 1px solid var(--bd); background: var(--vscode-editor-background); box-shadow: 0 16px 44px rgba(0,0,0,.35); display: flex; align-items: center; gap: 8px; }
+    .spin { width: 14px; height: 14px; flex: 0 0 14px; border: 2px solid var(--bd); border-top-color: var(--accent); border-radius: 50%; animation: spin .65s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    /* ── Separator ── */
-    hr { border: none; border-top: 1px solid var(--vscode-widget-border); margin: 8px 0; }
+
+    hr { border: none; border-top: 1px solid var(--bd); margin: 8px 0; }
+
+    /* ══ Responsive ══════════════════════════════════════════════════════════ */
+    @media (max-width: 255px) {
+      .brand-text h1 { font-size: 11px; }
+      .tab { font-size: 7.5px; }
+      .tab-icon { font-size: 10px; }
+    }
   </style>
 </head>
 <body>
@@ -736,14 +853,13 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
   <header class="hero">
     <div class="brand">
       <div class="logo-wrap"><img class="logo" src="${logoUri}" alt="ZT"></div>
-      <div>
-        <h1>Zero-Token TTS</h1>
-        <div class="subtitle">Local Voice Studio · Docker Edition</div>
+      <div class="brand-text"><h1>Zero-Token TTS</h1>
+        <div class="sub">Local Voice Studio · Docker Edition</div>
       </div>
     </div>
     <div class="hero-bottom">
       <div class="status-pill"><span id="statusDot" class="dot"></span><span id="statusText">wird geprüft…</span></div>
-      <div class="row" style="gap:4px">
+      <div class="hero-btns">
         <button class="btn ghost xs" id="refresh" title="Aktualisieren">↻</button>
         <button class="btn ghost xs" id="openSettings" title="Einstellungen">⚙</button>
       </div>
@@ -775,14 +891,14 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
           </div>
         </div>
         <div class="stack" style="margin-top:10px">
-          <button id="speakButton" class="btn wide">▶ Jetzt sprechen</button>
+          <button id="speakButton" class="btn w">▶ Jetzt sprechen</button>
           <div class="g2">
-            <button id="clipboardButton" class="btn secondary">📋 Zwischenablage</button>
-            <button id="selectionButton" class="btn secondary">✂ Auswahl</button>
+            <button id="clipboardButton" class="btn sec">📋 Zwischenablage</button>
+            <button id="selectionButton" class="btn sec">✂ Auswahl</button>
           </div>
         </div>
       </div>
-      <div class="metric-grid">
+      <div class="mg">
         <div class="metric"><div class="label">Aktive Stimme</div><strong id="activeVoice">–</strong></div>
         <div class="metric"><div class="label">Ausgaben</div><strong id="historyCount">0</strong></div>
         <div class="metric"><div class="label">TTS Port</div><strong id="apiPort">18765</strong></div>
@@ -790,8 +906,8 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
       </div>
       <div class="card" style="margin-top:8px">
         <div class="row between">
-          <span class="small">Autoplay (Agent-Modus)</span>
-          <label class="switch"><input id="autoPlay" type="checkbox"><span class="slider"></span></label>
+          <span class="small" style="font-weight:600">Autoplay</span><div class="xsmall muted">Agent-Modus</div>
+          <label class="sw"><input id="autoPlay" type="checkbox"><span class="sl"></span></label>
         </div>
       </div>
     </section>
@@ -800,8 +916,8 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
     <section id="panel-voices" class="panel">
       <div class="card">
         <h2 class="card-title">Stimmenbibliothek</h2>
-        <div class="card-subtitle" id="catalogSubtitle">Lade Katalog…</div>
-        <div class="lang-filter" id="langFilter"></div>
+        <div class="card-sub" id="catalogSubtitle">Lade Katalog…</div>
+        <div class="lf" id="langFilter"></div>
       </div>
       <div id="catalogList" class="stack"></div>
     </section>
@@ -810,18 +926,18 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
     <section id="panel-clone" class="panel">
       <div class="card">
         <h2 class="card-title">🧬 Voice Cloning</h2>
-        <div class="card-subtitle">Lade eine Sprachprobe hoch (10–60 Sek WAV/MP3)</div>
-        <div class="clone-zone" id="cloneZone">
-          <div class="clone-zone-icon">🎤</div>
+        <div class="card-sub">Lade eine Sprachprobe hoch (10–60 Sek WAV/MP3)</div>
+        <div class="zone" id="cloneZone">
+          <div class="zone-ico">🎤</div>
           <p><strong>WAV oder MP3 hier ablegen</strong></p>
           <p style="margin-top:4px">oder</p>
-          <button class="btn secondary" style="margin-top:8px" id="cloneUploadBtn">Datei auswählen</button>
+          <button class="btn sec" style="margin-top:8px" id="cloneUploadBtn">Datei auswählen</button>
           <input type="file" id="cloneFileInput" accept=".wav,.mp3,audio/*" style="display:none">
         </div>
         <div id="cloneFileName" class="small muted" style="margin-top:6px;text-align:center"></div>
         <div id="cloneNameRow" style="margin-top:10px;display:none" class="stack">
           <input type="text" id="cloneVoiceName" placeholder="Name für diese Stimme (z.B. Max)" maxlength="40">
-          <button class="btn wide" id="cloneSubmitBtn">🧬 Stimmprofil erstellen</button>
+          <button class="btn w" id="cloneSubmitBtn">🧬 Stimmprofil erstellen</button>
         </div>
       </div>
       <div class="card">
@@ -855,10 +971,10 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
       <!-- Master Key -->
       <div class="card">
         <h2 class="card-title">🔑 Master-Key</h2>
-        <div class="card-subtitle">Einmal-Passwort für den Admin-Zugriff</div>
-        <div id="masterKeyBox" class="master-key-box hidden" title="Klicken zum Anzeigen">••••••••••••••••••••••••••••••••</div>
+        <div class="card-sub">Einmal-Passwort für den Admin-Zugriff</div>
+        <div id="masterKeyBox" class="mkbox hidden" title="Klicken zum Anzeigen">••••••••••••••••••••••••••••••••</div>
         <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:5px">
-          <button class="btn secondary xs" id="toggleKeyVisible">👁 Anzeigen</button>
+          <button class="btn sec xs" id="toggleKeyVisible">👁 Anzeigen</button>
           <button class="btn ghost xs" id="copyMasterKey">📋 Kopieren</button>
           <button class="btn ghost xs" id="claimMasterKeyBtn" id="claimMasterKeyBtn">🔓 Key claimen</button>
         </div>
@@ -870,7 +986,7 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
         <div class="row between" style="margin-bottom:8px">
           <div>
             <h2 class="card-title" style="margin:0">API-Keys</h2>
-            <div class="card-subtitle" style="margin:0">Für externen Zugriff auf TTS</div>
+            <div class="card-sub" style="margin:0">Für externen Zugriff auf TTS</div>
           </div>
           <button class="btn xs" id="createApiKeyBtn">+ Neu</button>
         </div>
@@ -884,7 +1000,7 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
         <h2 class="card-title">Serversteuerung</h2>
         <div class="row wrap">
           <button id="startServer" class="btn xs">▶ Starten</button>
-          <button id="restartServer" class="btn secondary xs">↺ Neu starten</button>
+          <button id="restartServer" class="btn sec xs">↺ Neu starten</button>
           <button id="stopServer" class="btn danger xs">■ Stoppen</button>
         </div>
         <button id="bootstrap" class="btn ghost wide" style="margin-top:8px">🔧 Einrichtung ausführen</button>
@@ -894,7 +1010,7 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
   </main>
 </div>
 <div id="busy" class="busy">
-  <div class="busy-card"><span class="spinner"></span><span id="busyLabel">Bitte warten…</span></div>
+  <div class="busy-card"><span class="spin"></span><span id="busyLabel">Bitte warten…</span></div>
 </div>
 
 <script nonce="${nonce}">
@@ -933,7 +1049,7 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
 
     // Build lang buttons
     const langs = ['all', ...new Set(models.map(m => m.lang))];
-    $('langFilter').innerHTML = langs.map(l => \`<button class="lang-btn \${l === langFilter ? 'active' : ''}" data-lang="\${esc(l)}">\${l === 'all' ? '🌍 Alle' : l.toUpperCase()}</button>\`).join('');
+    $('langFilter').innerHTML = langs.map(l => \`<button class="lbtn \${l === langFilter ? 'active' : ''}" data-lang="\${esc(l)}">\${l === 'all' ? '🌍 Alle' : l.toUpperCase()}</button>\`).join('');
 
     const filtered = langFilter === 'all' ? models : models.filter(m => m.lang === langFilter);
 
@@ -947,27 +1063,27 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
       let actions = '';
       if (isDone) {
         actions = m.active
-          ? \`<span class="chip green">✓ AKTIV</span>\`
+          ? \`<span class="chip ok">✓ AKTIV</span>\`
           : \`<button class="btn xs" data-activate="\${esc(m.id)}">Verwenden</button>\`;
       } else if (isDownloading) {
-        actions = \`<span class="chip yellow"><span class="spinner" style="width:8px;height:8px;margin-right:3px"></span>Download…</span>\`;
+        actions = \`<span class="chip warn"><span class="spin" style="width:8px;height:8px;margin-right:3px"></span>Download…</span>\`;
       } else if (isError) {
         actions = \`<button class="btn danger xs" data-catalog-dl="\${esc(m.id)}">↺ Erneut</button>\`;
       } else {
         actions = \`<button class="btn xs" data-catalog-dl="\${esc(m.id)}">⬇ Laden (\${esc(m.size)})</button>\`;
       }
 
-      return \`<article class="voice-card \${m.active ? 'active' : ''} \${isDownloading ? 'downloading' : ''}">
+      return \`<article class="vc \${m.active ? 'active' : ''} \${isDownloading ? 'downloading' : ''}">
         <div class="row between">
-          <div><div class="voice-name">\${esc(m.label)}</div><div class="very-small muted">\${esc(m.id)}</div></div>
-          <div class="row" style="gap:4px">\${actions}</div>
+          <div><div class="vc-name">\${esc(m.label)}</div><div class="very-small muted">\${esc(m.id)}</div></div>
+          <div class="hero-btns">\${actions}</div>
         </div>
         <div class="chips">
           <span class="chip">\${esc(m.lang.toUpperCase())}</span>
           <span class="chip \${qualityColor}">\${esc(m.quality)}</span>
           <span class="chip">\${esc(m.size)}</span>
         </div>
-        \${isDownloading ? '<div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>' : ''}
+        \${isDownloading ? '<div class="pbar"><div class="pfill" style="width:100%"></div></div>' : ''}
         \${isError ? '<div class="very-small" style="color:#ef4444;margin-top:4px">Fehler: ' + esc(dl.error||'unbekannt') + '</div>' : ''}
       </article>\`;
     }).join('') || '<div class="empty">Keine Modelle für diese Sprache.</div>';
@@ -976,18 +1092,18 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
   function renderHistory(items, count) {
     $('historyCaption').textContent = count === 1 ? '1 Ausgabe' : count + ' Ausgaben';
     $('historyList').innerHTML = items.map(item =>
-      \`<article class="history-item">
-        <div class="row between"><span class="chip">\${esc(item.source||'manual')}</span><span class="history-meta">\${esc(fmtDate(item.played_at))}</span></div>
-        <div class="history-text">\${esc(item.text_preview||item.text||'')}</div>
-        <div class="row between"><span class="history-meta">\${esc(item.voice)} · \${Number(item.played_count||1)}×</span><button class="btn secondary xs" data-replay="\${Number(item.id)}">▶ Nochmal</button></div>
+      \`<article class="hi">
+        <div class="row between"><span class="chip">\${esc(item.source||'manual')}</span><span class="hi-meta">\${esc(fmtDate(item.played_at))}</span></div>
+        <div class="hi-text">\${esc(item.text_preview||item.text||'')}</div>
+        <div class="row between"><span class="hi-meta">\${esc(item.voice)} · \${Number(item.played_count||1)}×</span><button class="btn sec xs" data-replay="\${Number(item.id)}">▶ Nochmal</button></div>
       </article>\`
     ).join('') || '<div class="empty">Noch keine Ausgaben.<br>Sprich deinen ersten Text!</div>';
   }
 
   function renderProfiles(profiles) {
     $('profileList').innerHTML = (profiles||[]).map(p =>
-      \`<div class="profile-card">
-        <div class="profile-avatar">🎤</div>
+      \`<div class="pc">
+        <div class="pav">🎤</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:650;font-size:12px">\${esc(p.name)}</div>
           <div class="very-small muted">\${esc(fmtDate(p.createdAt))} · \${esc(p.baseModel||'')}</div>
@@ -1009,8 +1125,8 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
     // API Keys
     const keys = data.apiKeys || [];
     $('apiKeyList').innerHTML = keys.length ? keys.map(k =>
-      \`<div class="key-row">
-        <div><div class="key-name">\${esc(k.name||'unnamed')}</div><div class="key-preview">\${esc(k.preview||k.key?.substring(0,14)+'...')}</div></div>
+      \`<div class="kr">
+        <div><div class="kn">\${esc(k.name||'unnamed')}</div><div class="kpv">\${esc(k.preview||k.key?.substring(0,14)+'...')}</div></div>
         <button class="btn ghost xs" data-copy-key="\${esc(k.key)}">📋</button>
         <button class="btn danger xs" data-revoke-key="\${esc(k.key)}" data-revoke-name="\${esc(k.name)}">×</button>
       </div>\`
@@ -1098,10 +1214,10 @@ export class TtsSidebarProvider implements vscode.WebviewViewProvider, vscode.Di
     }
   });
   const cloneZone = $('cloneZone');
-  cloneZone.addEventListener('dragover', e => { e.preventDefault(); cloneZone.classList.add('dragover'); });
-  cloneZone.addEventListener('dragleave', () => cloneZone.classList.remove('dragover'));
+  cloneZone.addEventListener('dragover', e => { e.preventDefault(); cloneZone.classList.add('over'); });
+  cloneZone.addEventListener('dragleave', () => cloneZone.classList.remove('over'));
   cloneZone.addEventListener('drop', e => {
-    e.preventDefault(); cloneZone.classList.remove('dragover');
+    e.preventDefault(); cloneZone.classList.remove('over');
     cloneFile = e.dataTransfer.files?.[0];
     if (cloneFile) {
       $('cloneFileName').textContent = cloneFile.name;
