@@ -15,6 +15,12 @@ const crypto = require("crypto");
 
 const MCP_PORT = process.env.MCP_PORT || 18764;
 const TTS_PORT = process.env.TTS_PORT || 18765;
+
+// EPIPE-Fehler (Client trennt Verbindung) nicht abstürzen lassen
+process.on("uncaughtException", (e) => {
+  if (e.code === "EPIPE" || e.code === "ECONNRESET") return;
+  console.error("Unbehandelter Fehler:", e);
+});
 const ASSETS_DIR = process.env.TTS_ASSETS_DIR || (process.pkg ? path.join(path.dirname(process.execPath), "tts-server") : path.join(__dirname, "..", "tts-server"));
 const STARTED_AT = Date.now();
 const APP_VERSION = (() => {
@@ -211,9 +217,11 @@ async function synthesizeAndRespond(req, res, inputKey) {
     }
 
     const audio = await piperEngine.synthesize(text);
+    res.on("error", () => {});
     res.writeHead(200, { "Content-Type": "audio/wav" });
     res.end(audio);
   } catch (e) {
+    if (res.headersSent) return;
     res.writeHead(500, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: e.message }));
   }
