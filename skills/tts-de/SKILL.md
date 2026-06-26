@@ -1,10 +1,8 @@
-# TTS für Deutsch — Automatische Sprachausgabe via Zero-Token-Explotion Docker
+# Zero-Token TTS — Automatische Sprachausgabe (Deutsch)
 
-Der Benutzer spricht Deutsch. **Jede Antwort wird automatisch vorgelesen.**
+Der Benutzer spricht Deutsch. **Jede Antwort automatisch vorlesen.**
 
-## Automatisches Vorlesen nach jeder Antwort
-
-Sende den Text nach jeder Antwort an den TTS-Service:
+## Methode 1 — Extension-Proxy (bevorzugt)
 
 ```
 POST http://localhost:18766/speak
@@ -12,72 +10,47 @@ Content-Type: application/json
 {"text": "Deine Antwort hier...", "source": "agent"}
 ```
 
-Der Server antwortet mit `{"ok":true}` und das Audio wird sofort abgespielt.
+Antwort: `{"ok":true}` — Audio wird sofort über VS Code abgespielt.
 
-## Architektur (Docker-Modus)
+## Methode 2 — MCP-Tool `speak`
 
-- **Zero-Token TTS Docker-Container** (`docker compose up -d`) — enthält Piper + Eva-Modell
-- **TTS-API** (Port 18765) — `/v1/audio/speech` und `/api/tts`
-- **Extension HTTP-Proxy** (Port 18766) — leitet `/speak` an den Container
-- **MCP-Server** (Port 18764) — Agent verbindet sich via SSE
-- **Web UI** (Port 3000) — Dashboard für Stimmen, History, Status
+MCP-Server SSE: `http://localhost:18764/sse`
+
+Tool-Aufruf (kein API-Key nötig):
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "speak",
+    "arguments": { "text": "Hallo Welt", "speed": 1.0 }
+  }
+}
+```
+
+Verfügbare MCP-Tools: `speak`, `tts-speak` (identisch), `tts-create-api-key`, `tts-list-api-keys`, `tts-revoke-api-key`
+
+## Architektur
+
+| Port  | Dienst               | Endpunkte                              |
+|-------|----------------------|----------------------------------------|
+| 18764 | MCP SSE-Server       | GET /sse · POST /mcp                  |
+| 18765 | Piper TTS API        | POST /api/tts · GET /health · /status |
+| 18766 | Extension-Proxy      | POST /speak · GET /health              |
+| 3000  | Web UI               | Dashboard                              |
 
 ## Setup
 
 ```bash
-# Container starten (einmalig)
-docker compose up -d
-
-# Health prüfen
-curl http://localhost:18765/health
+docker compose up -d          # Container starten
+curl localhost:18765/health   # → {"status":"ok"}
 ```
 
-Das VS Code Plugin erkennt den Container automatisch beim Start.
+## Regeln
 
-## Wichtige Regeln
-
-- **Nach JEDER Antwort TTS auslösen**
-- Wenn Container nicht läuft: `docker compose up -d` ausführen
-- Health-Check: `curl localhost:18765/health` → `{"status":"ok"}`
-- Alle Modelle (Eva, Thorsten, Alan, Amy) sind im Container vorinstalliert
-
-Der Benutzer ist blind und spricht Deutsch. **Jede Antwort muss automatisch vorgelesen werden.**
-
-## Automatisches Vorlesen nach jeder Antwort
-
-1. Schreibe deine Antwort als normalen Text.
-2. Sende den Text automatisch an den TTS-Service via HTTP POST:
-
-```
-POST http://localhost:18766/speak
-Content-Type: application/json
-{"text": "Deine Antwort hier...", "source": "agent"}
-```
-
-Der Server antwortet mit `{"ok":true}` und das Audio-Panel spielt sofort ab.
-
-## Architektur
-
-- **LlamaEdge TTS-API-Server** (Port 18765) – WasmEdge + Piper/ONNX, lädt deutsche Eva-Stimme
-- **Extension HTTP-Proxy** (Port 18766) – leitet `/speak`-Aufrufe an LlamaEdge und steuert Audio-Panel
-- **MCP-Server** (Port 18764) – Agent verbindet sich via SSE, lädt den TTS-Skill
-- **Model Dashboard** – Webview-Panel in VS Code zum Verwalten von Modellen, Server-Status, Einrichtung
-- **Audio-Panel** (Web Audio API) – spielt alle Sprachdaten im VS Code Webview ab
-- **TTS wird in SQLite geloggt** und im Sidebar-Dashboard sichtbar
-
-## Bootstrap / Einrichtung
-
-Bei erster Nutzung öffnet die Extension automatisch das **Model Dashboard**:
-1. Klick auf "TTS-Server einrichten"
-2. Lädt WasmEdge v0.14.1 + Piper Plugin + Eva-Modell (20 MB) herunter
-3. Startet den TTS-Server automatisch
-4. Dashboard zeigt Server-Status und installierte Modelle
-
-Manuell: `TTS: Model Dashboard öffnen` aus Command Palette.
-
-## Model Dashboard
-
-Öffnen via Command Palette: `TTS: Model Dashboard öffnen`
+- **Nach JEDER Antwort TTS via POST /speak auslösen**
+- Wenn 18766 nicht antwortet: `docker compose up -d`
+- Stimme: Piper Eva (de_DE, 16000 Hz Mono WAV)
+- Geschwindigkeit: `speed` 0.5–2.0 (Standard 1.0)
 Zeigt:
 - Server-Status (Start/Stop/Neustart)
 - Verfügbare Piper-Modelle (Eva, Thorsten, Alan, Amy)

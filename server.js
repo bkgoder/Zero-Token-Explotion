@@ -328,15 +328,8 @@ function startMcpServer(port = MCP_PORT) {
       return;
     }
 
-    // Direct TTS API
+    // Direct TTS API (no auth required — localhost only)
     if (req.method === "POST" && req.url === "/api/tts") {
-      const apiKey = req.headers["x-api-key"];
-      if (!apiKey || !validateApiKey(apiKey)) {
-        res.writeHead(401, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Invalid or missing API key" }));
-        return;
-      }
-
       let body = "";
       req.on("data", (c) => (body += c));
       req.on("end", async () => {
@@ -348,11 +341,8 @@ function startMcpServer(port = MCP_PORT) {
             res.end(JSON.stringify({ error: "text is required" }));
             return;
           }
-
-          const keyData = apiKeys.get(apiKey);
-          if (keyData) keyData.lastUsed = new Date();
-
-          const audio = await piperEngine.synthesize(text);
+          const speed = params.speed || params.rate || 1.0;
+          const audio = await piperEngine.synthesize(text, speed);
           res.writeHead(200, { "Content-Type": "audio/wav" });
           res.end(audio);
         } catch (e) {
@@ -443,15 +433,27 @@ function startMcpServer(port = MCP_PORT) {
               result: {
                 tools: [
                   {
+                    name: "speak",
+                    description: "Liest Text laut vor (Text-to-Speech via Piper). Gibt WAV-Audio als Base64 zurück.",
+                    inputSchema: {
+                      type: "object",
+                      properties: {
+                        text: { type: "string", description: "Vorzulesender Text" },
+                        speed: { type: "number", description: "Sprechgeschwindigkeit (0.5–2.0, Standard 1.0)", default: 1.0 },
+                      },
+                      required: ["text"],
+                    },
+                  },
+                  {
                     name: "tts-speak",
-                    description: "Synthesizes text to speech (requires API key)",
+                    description: "Synthesizes text to speech via Piper TTS. Returns WAV audio as base64.",
                     inputSchema: {
                       type: "object",
                       properties: {
                         text: { type: "string", description: "Text to synthesize" },
-                        apiKey: { type: "string", description: "API key for authentication" },
+                        speed: { type: "number", description: "Speech speed (0.5–2.0, default 1.0)", default: 1.0 },
                       },
-                      required: ["text", "apiKey"],
+                      required: ["text"],
                     },
                   },
                   {
@@ -498,39 +500,28 @@ function startMcpServer(port = MCP_PORT) {
           if (method === "tools/call") {
             const toolName = params?.name || "";
 
-            if (toolName === "tts-speak") {
-              const { text, apiKey } = params || {};
-              if (!text || !apiKey) {
+            if (toolName === "speak" || toolName === "tts-speak") {
+              const args = params?.arguments || params || {};
+              const text = args.text || "";
+              const speed = parseFloat(args.speed || 1.0);
+              if (!text.trim()) {
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(JSON.stringify({
                   jsonrpc: "2.0",
                   id,
-                  error: { code: -32602, message: "text and apiKey are required" },
+                  error: { code: -32602, message: "text is required" },
                 }));
                 return;
               }
-              if (!validateApiKey(apiKey)) {
-                res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({
-                  jsonrpc: "2.0",
-                  id,
-                  error: { code: -32601, message: "Invalid API key" },
-                }));
-                return;
-              }
-
-              const keyData = apiKeys.get(apiKey);
-              if (keyData) keyData.lastUsed = new Date();
-
               try {
-                const audio = await piperEngine.synthesize(text);
+                const audio = await piperEngine.synthesize(text, speed);
                 const base64 = audio.toString("base64");
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(JSON.stringify({
                   jsonrpc: "2.0",
                   id,
                   result: {
-                    content: [{ type: "text", text: `TTS generated (${text.length} chars)\n\nAudio: ${base64.length} chars base64` }],
+                    content: [{ type: "text", text: `✅ TTS erzeugt: ${text.length} Zeichen → ${audio.length} Bytes WAV` }],
                     audio: { mimeType: "audio/wav", data: base64 },
                   },
                 }));
@@ -539,7 +530,7 @@ function startMcpServer(port = MCP_PORT) {
                 res.end(JSON.stringify({
                   jsonrpc: "2.0",
                   id,
-                  error: { code: -32603, message: `TTS error: ${e.message}` },
+                  error: { code: -32603, message: `TTS Fehler: ${e.message}` },
                 }));
               }
               return;
