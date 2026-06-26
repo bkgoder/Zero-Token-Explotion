@@ -1,4 +1,45 @@
-# TTS für Deutsch — Automatische Sprachausgabe via LlamaEdge TTS-Server
+# TTS für Deutsch — Automatische Sprachausgabe via Zero-Token-Explotion Docker
+
+Der Benutzer spricht Deutsch. **Jede Antwort wird automatisch vorgelesen.**
+
+## Automatisches Vorlesen nach jeder Antwort
+
+Sende den Text nach jeder Antwort an den TTS-Service:
+
+```
+POST http://localhost:18766/speak
+Content-Type: application/json
+{"text": "Deine Antwort hier...", "source": "agent"}
+```
+
+Der Server antwortet mit `{"ok":true}` und das Audio wird sofort abgespielt.
+
+## Architektur (Docker-Modus)
+
+- **Zero-Token TTS Docker-Container** (`docker compose up -d`) — enthält Piper + Eva-Modell
+- **TTS-API** (Port 18765) — `/v1/audio/speech` und `/api/tts`
+- **Extension HTTP-Proxy** (Port 18766) — leitet `/speak` an den Container
+- **MCP-Server** (Port 18764) — Agent verbindet sich via SSE
+- **Web UI** (Port 3000) — Dashboard für Stimmen, History, Status
+
+## Setup
+
+```bash
+# Container starten (einmalig)
+docker compose up -d
+
+# Health prüfen
+curl http://localhost:18765/health
+```
+
+Das VS Code Plugin erkennt den Container automatisch beim Start.
+
+## Wichtige Regeln
+
+- **Nach JEDER Antwort TTS auslösen**
+- Wenn Container nicht läuft: `docker compose up -d` ausführen
+- Health-Check: `curl localhost:18765/health` → `{"status":"ok"}`
+- Alle Modelle (Eva, Thorsten, Alan, Amy) sind im Container vorinstalliert
 
 Der Benutzer ist blind und spricht Deutsch. **Jede Antwort muss automatisch vorgelesen werden.**
 

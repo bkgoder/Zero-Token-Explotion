@@ -259,78 +259,40 @@ curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/insta
     return AVAILABLE_MODELS;
   }
 
-  /** Prüft ob ein Modell lokal vorhanden ist */
-  isModelDownloaded(model: PiperModel): boolean {
-    const binDir = this.getBinDir();
-    return fs.existsSync(path.join(binDir, model.onnxFile));
+  /** Im Docker-Modus: Modell gilt als vorhanden (liegt im Container) */
+  isModelDownloaded(_model: PiperModel): boolean {
+    return true;
   }
 
-  /** Zeigt installierte Modelle an */
+  /** Im Docker-Modus: alle Modelle als installiert melden */
   getInstalledModels(): PiperModel[] {
-    return AVAILABLE_MODELS.filter((m) => this.isModelDownloaded(m));
+    return AVAILABLE_MODELS;
   }
 
-  /** Lädt ein einzelnes Modell herunter */
+  /** Modell-Download: im Docker-Modus bereits im Container vorhanden */
   async downloadModel(
     model: PiperModel,
     progress: vscode.Progress<{ message?: string; increment?: number }>
   ): Promise<boolean> {
-    const binDir = this.getBinDir();
-
-    try {
-      progress.report({ message: `Lade ${model.label} (${model.size})...` });
-
-      // .onnx
-      const onnxPath = path.join(binDir, model.onnxFile);
-      if (!fs.existsSync(onnxPath)) {
-        await downloadFile(model.onnxUrl, onnxPath);
-      }
-
-      // .onnx.json
-      const jsonPath = path.join(binDir, model.onnxFile + ".json");
-      if (!fs.existsSync(jsonPath) && model.jsonUrl) {
-        await downloadFile(model.jsonUrl, jsonPath);
-      }
-
-      progress.report({ message: `${model.label} fertig`, increment: 100 });
-
-      // espeak-ng-data (nur einmal)
-      const espeakDir = path.join(binDir, "espeak-ng-data");
-      if (!fs.existsSync(espeakDir)) {
-        progress.report({ message: "Lade espeak-ng-Daten..." });
-        await downloadAndExtract(model.espeakUrl, binDir);
-      }
-
-      return true;
-    } catch (e: any) {
-      this.log(`Download fehlgeschlagen: ${model.label} – ${e.message}`);
-      return false;
-    }
+    progress.report({ message: `${model.label} wird vom Docker-Container bereitgestellt.`, increment: 100 });
+    this.log(`[Docker] Modell ${model.label} liegt im Container – kein lokaler Download nötig.`);
+    return true;
   }
 
-  /** Prüft ob der unified TTS-Server Binary vorhanden ist */
+  /** Im Docker-Modus: Health-Check gegen den Container */
   async downloadAll(
     progress: vscode.Progress<{ message?: string; increment?: number }>
   ): Promise<boolean> {
-    const binDir = this.getBinDir();
-    const serverBinary = this.findServerBinary();
-    
-    if (!serverBinary) {
-      progress.report({ message: "TTS-Server Binary nicht gefunden. Bitte Extension neu installieren." });
-      return false;
+    const port = vscode.workspace.getConfiguration("zero-token-tts").get<number>("ttsApiPort", 18765);
+    progress.report({ message: `Prüfe Docker-Container auf Port ${port}...` });
+    const healthy = await this.checkHealth(port);
+    if (healthy) {
+      progress.report({ message: "✅ Docker-Container bereit", increment: 100 });
+      return true;
     }
-
-    // Prüfe ob Piper-Modelle vorhanden sind
-    const modelPath = path.join(binDir, "de_DE-eva_k-x_low.onnx");
-    if (!fs.existsSync(modelPath)) {
-      progress.report({ message: "Lade Piper-Modell (Eva-Stimme)..." });
-      const evaModel = AVAILABLE_MODELS[0];
-      const ok = await this.downloadModel(evaModel, progress);
-      if (!ok) return false;
-    }
-
-    progress.report({ message: "TTS-Server bereit" });
-    return true;
+    progress.report({ message: `❌ Docker-Container nicht erreichbar (Port ${port}). Starte: docker compose up -d` });
+    this.log(`[Docker] Health-Check fehlgeschlagen auf Port ${port}`);
+    return false;
   }
 
   // ─── Hilfsfunktionen ─────────────────────────────────────────────────────

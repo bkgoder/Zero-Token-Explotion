@@ -97,7 +97,14 @@ class PiperEngine {
     }
   }
 
-  async synthesize(text) {
+  getSampleRate() {
+    try {
+      const cfg = JSON.parse(fs.readFileSync(this.configPath, "utf8"));
+      return cfg.audio?.sample_rate || cfg.sample_rate || 22050;
+    } catch { return 22050; }
+  }
+
+  async synthesize(text, speed = 1.0) {
     this.ensureExecutable();
 
     if (!fs.existsSync(this.piperPath)) {
@@ -107,12 +114,17 @@ class PiperEngine {
       throw new Error(`Model not found at ${this.modelPath}`);
     }
 
+    const sampleRate = this.getSampleRate();
+    // length_scale: <1 = schneller, >1 = langsamer (Kehrwert von speed)
+    const lengthScale = speed > 0 ? (1.0 / speed).toFixed(3) : "1.000";
+
     return new Promise((resolve, reject) => {
       const args = [
         "--model", this.modelPath,
         "--config", this.configPath,
         "--output-raw",
         "--espeak-ng-dir", this.espeakDir,
+        "--length-scale", lengthScale,
       ];
 
       const piper = spawn(this.piperPath, args, {
@@ -146,7 +158,7 @@ class PiperEngine {
 
         // Piper outputs raw PCM, convert to WAV
         const pcm = Buffer.concat(stdout);
-        const wav = this.pcmToWav(pcm, 22050, 1, 16);
+        const wav = this.pcmToWav(pcm, sampleRate, 1, 16);
         resolve(wav);
       });
 
@@ -220,8 +232,9 @@ async function synthesizeAndRespond(req, res, inputKey) {
       res.end(JSON.stringify({ error: "text is required" }));
       return;
     }
+    const speed = parseFloat(params.speed) || 1.0;
 
-    const audio = await piperEngine.synthesize(text);
+    const audio = await piperEngine.synthesize(text, speed);
     res.on("error", () => {});
     res.writeHead(200, { "Content-Type": "audio/wav" });
     res.end(audio);
